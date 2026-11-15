@@ -8,7 +8,7 @@
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Google Fonts: Lexend for clean dyslexia-friendly legibility, Fredoka for bold fun titles -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&family=Lexend:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -486,9 +486,6 @@ GRAMMAR..."></textarea>
   </div>
 
   <script>
-    /* ==========================================
-       HYPERBEAM / REMOTE STREAM FAST-TAP HELPER
-       ========================================== */
     function bindFastTap(el, handler) {
       if (!el) return;
       let lastTriggerTime = 0;
@@ -505,9 +502,6 @@ GRAMMAR..."></textarea>
       el.addEventListener('click', trigger);
     }
 
-    /* ==========================================
-       DATA & STATE
-       ========================================== */
     const PRESET_Y34_WORDS = [
       "BICYCLE", "CALENDAR", "GRAMMAR", "ISLAND", "PROMISE",
       "QUARTER", "SEPARATE", "STRENGTH", "SURPRISE", "WEIGHT"
@@ -537,9 +531,6 @@ GRAMMAR..."></textarea>
     let questionsBeforeTrick = 3;
     let correctAnswersStreak = 0;
 
-    /* ==========================================
-       SOUND SYNTHESIZER
-       ========================================== */
     class SkateSoundSynth {
       constructor() {
         this.ctx = null;
@@ -668,9 +659,6 @@ GRAMMAR..."></textarea>
       } catch (err) {}
     }
 
-    /* ==========================================
-       THREE.JS 3D SCENE & SKATEBOARD
-       ========================================== */
     const canvas = document.getElementById('webgl-canvas');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0c1322);
@@ -695,7 +683,6 @@ GRAMMAR..."></textarea>
     streetGlow.position.set(0, 3, 2);
     scene.add(streetGlow);
 
-    // ROAD
     const ROAD_WIDTH = 10.5;
     const ROAD_LENGTH = 180;
     const roadGroup = new THREE.Group();
@@ -708,7 +695,6 @@ GRAMMAR..."></textarea>
     roadMesh.receiveShadow = true;
     roadGroup.add(roadMesh);
 
-    // Curbs & Rails
     const curbGeo = new THREE.BoxGeometry(0.5, 0.35, ROAD_LENGTH);
     const curbMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4, emissive: 0x0369a1, emissiveIntensity: 0.2 });
     const leftCurb = new THREE.Mesh(curbGeo, curbMat);
@@ -719,7 +705,6 @@ GRAMMAR..."></textarea>
     rightCurb.position.set(ROAD_WIDTH / 2 + 0.25, 0.17, 0);
     roadGroup.add(rightCurb);
 
-    // Dashes
     const roadDashes = [];
     const dashGeo = new THREE.PlaneGeometry(0.32, 2.5);
     const dashMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
@@ -731,7 +716,6 @@ GRAMMAR..."></textarea>
       roadDashes.push(dash);
     }
 
-    // Street Poles
     const streetPoles = [];
     const poleGeo = new THREE.CylinderGeometry(0.1, 0.12, 6, 8);
     const poleMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
@@ -744,7 +728,6 @@ GRAMMAR..."></textarea>
       });
     }
 
-    // SKATEBOARD
     const skateboardGroup = new THREE.Group();
     scene.add(skateboardGroup);
 
@@ -794,7 +777,6 @@ GRAMMAR..."></textarea>
       wheels.push(wheel);
     });
 
-    // Shadow
     const shadowGeo = new THREE.PlaneGeometry(deckWidth * 1.3, deckLength * 1.15);
     const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.65 });
     const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
@@ -809,9 +791,6 @@ GRAMMAR..."></textarea>
     camera.position.set(0, 5.2, 9.6);
     camera.lookAt(0, 0.8, -1.8);
 
-    /* ==========================================
-       PHYSICS & TRICK ENGINE
-       ========================================== */
     const physics = {
       x: 0,
       y: boardRestY,
@@ -955,9 +934,6 @@ GRAMMAR..."></textarea>
       }
     }
 
-    /* ==========================================
-       VIRTUAL JOYSTICK & CONTROLS
-       ========================================== */
     let joystickActive = false;
     let joystickOrigin = { x: 0, y: 0 };
     let joystickDelta = { x: 0, y: 0 };
@@ -1026,9 +1002,6 @@ GRAMMAR..."></textarea>
       bindFastTap(btn, action);
     });
 
-    /* ==========================================
-       QUESTION / SPELLING SYSTEM
-       ========================================== */
     const questionDock = document.getElementById('question-dock');
     const trickTimeDock = document.getElementById('trick-time-dock');
     const targetSlotsContainer = document.getElementById('target-slots-container');
@@ -1328,9 +1301,6 @@ GRAMMAR..."></textarea>
       }
     }
 
-    /* ==========================================
-       TRICK RUN COUNTDOWN
-       ========================================== */
     function startTrickTime() {
       isTrickTime = true;
       trickTimeRemaining = 10;
@@ -1376,9 +1346,6 @@ GRAMMAR..."></textarea>
       endTrickTime();
     });
 
-    /* ==========================================
-       SETTINGS & MODALS
-       ========================================== */
     const modalSettings = document.getElementById('modal-settings');
     const inputSpellings = document.getElementById('input-spellings-list');
     const btnSaveSettings = document.getElementById('btn-save-settings');
@@ -1496,7 +1463,6 @@ GRAMMAR..."></textarea>
       loadQuestion(0);
     });
 
-    // SHARE MODAL & 1-CLICK HTML DOWNLOAD
     const btnShareLink = document.getElementById('btn-share-link');
     const modalShareInstructions = document.getElementById('modal-share-instructions');
     const btnCloseShareInstructions = document.getElementById('btn-close-share-instructions');
@@ -1543,9 +1509,6 @@ GRAMMAR..."></textarea>
       btnAudioToggle.textContent = audio.muted ? '🔇' : '🔊';
     });
 
-    /* ==========================================
-       RENDER & ANIMATION LOOP
-       ========================================== */
     const clock = new THREE.Clock();
 
     function animate() {
