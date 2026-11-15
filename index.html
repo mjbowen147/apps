@@ -2,369 +2,253 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TouchGrind: Skate & Learn</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800&family=Lexend:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800&family=Lexend:wght@400;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
-    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-    textarea, input { user-select: text; -webkit-user-select: text; }
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0b0f19; font-family: 'Lexend', sans-serif; }
-    .font-display { font-family: 'Fredoka', 'Lexend', sans-serif; }
-    #webgl-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
-    button { cursor: pointer; touch-action: manipulation; }
-    button:active { transform: scale(0.94); }
+    * { box-sizing: border-box; user-select: none; }
+    textarea { user-select: text; }
+    body, html { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #0b0f19; font-family: 'Lexend', sans-serif; color: #fff; }
+    .font-display { font-family: 'Fredoka', sans-serif; }
+    #webgl-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+    button { cursor: pointer; }
+    button:active { transform: scale(0.95); }
     .btn-locked { opacity: 0.35; filter: grayscale(0.85); pointer-events: none; }
-    .panel-solid { background: rgba(15, 23, 42, 0.96); }
-    #joystick-base { position: relative; width: 120px; height: 120px; border-radius: 9999px; background: rgba(15,23,42,0.92); border: 3px solid rgba(6,182,212,0.6); display: flex; align-items: center; justify-content: center; }
-    #joystick-knob { position: absolute; width: 52px; height: 52px; border-radius: 9999px; background: #0284c7; border: 2px solid rgba(255,255,255,0.6); pointer-events: none; }
+    .panel { background: rgba(15, 23, 42, 0.96); }
   </style>
 </head>
-<body class="text-white">
-  <div id="app-container" class="relative w-screen h-screen overflow-hidden">
+<body>
+  <div class="relative w-screen h-screen overflow-hidden">
     <canvas id="webgl-canvas"></canvas>
 
-    <!-- Top HUD -->
-    <header class="absolute top-0 left-0 right-0 z-30 p-3 flex justify-between items-center pointer-events-none">
-      <div class="flex items-center gap-2 pointer-events-auto">
-        <div class="panel-solid border border-cyan-500/40 px-3 py-1.5 rounded-2xl flex items-center gap-2">
-          <span class="text-xs uppercase font-extrabold text-cyan-400">Goal</span>
-          <span id="hud-streak-progress" class="font-black text-sm text-yellow-300 font-display">0 / 3</span>
+    <header class="absolute top-0 inset-x-0 z-30 p-3 flex justify-between items-center pointer-events-none">
+      <div class="flex gap-2 pointer-events-auto">
+        <div class="panel border border-cyan-500/40 px-3 py-1.5 rounded-2xl flex items-center gap-2">
+          <span class="text-xs font-extrabold text-cyan-400">GOAL</span>
+          <span id="hud-streak" class="font-black text-sm text-yellow-300 font-display">0 / 3</span>
         </div>
-        <div class="panel-solid border border-slate-700 px-3 py-1.5 rounded-2xl flex items-center gap-1.5">
-          <span class="text-xs uppercase font-bold text-slate-400">Score</span>
-          <span id="hud-score-val" class="font-extrabold text-sm text-emerald-400 font-display">0</span>
-        </div>
-      </div>
-
-      <div id="trick-callout-banner" class="opacity-0 transition-opacity duration-200 pointer-events-none">
-        <div class="px-4 py-1.5 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-600 to-cyan-500 border border-white/40">
-          <span id="trick-callout-text" class="text-sm sm:text-base font-black text-white font-display">CLEAN KICKFLIP!</span>
+        <div class="panel border border-slate-700 px-3 py-1.5 rounded-2xl flex items-center gap-1.5">
+          <span class="text-xs font-bold text-slate-400">SCORE</span>
+          <span id="hud-score" class="font-extrabold text-sm text-emerald-400 font-display">0</span>
         </div>
       </div>
-
-      <div class="flex items-center gap-2 pointer-events-auto">
-        <button type="button" onmousedown="openShareModal()" class="px-3 py-2 rounded-xl bg-cyan-950 border border-cyan-500/60 text-cyan-300 font-bold text-xs sm:text-sm">📤 Send to Pupil</button>
-        <button type="button" onmousedown="openSettingsModal()" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 font-bold text-xs sm:text-sm">⚙️ Settings</button>
-        <button id="btn-audio-toggle" type="button" onmousedown="toggleAudio()" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-sm">🔊</button>
+      <div id="banner" class="opacity-0 transition-opacity px-4 py-1.5 rounded-2xl bg-gradient-to-r from-pink-500 to-cyan-500 font-black text-sm font-display">NICE!</div>
+      <div class="flex gap-2 pointer-events-auto">
+        <button type="button" onmousedown="openSettings()" onclick="openSettings()" class="px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 font-bold text-xs">⚙️ Settings</button>
+        <button id="btn-mute" type="button" onmousedown="toggleMute()" onclick="toggleMute()" class="p-2 rounded-xl bg-slate-900 border border-slate-700 text-sm">🔊</button>
       </div>
     </header>
 
-    <!-- Bottom Left: Joystick -->
-    <div class="absolute bottom-4 left-4 z-30 pointer-events-auto">
-      <div id="joystick-base"><div id="joystick-knob"></div></div>
-      <div class="text-[10px] uppercase font-bold text-cyan-400 text-center mt-1">◀ STEER ▶</div>
+    <div class="absolute bottom-4 left-4 z-30 pointer-events-auto flex flex-col items-center gap-1">
+      <div class="flex gap-2">
+        <button type="button" onmousedown="steer(-1)" onmouseup="steer(0)" onclick="steer(-0.6)" class="w-12 h-12 rounded-2xl panel border-2 border-cyan-500/60 font-black text-cyan-300">◀</button>
+        <button type="button" onmousedown="steer(1)" onmouseup="steer(0)" onclick="steer(0.6)" class="w-12 h-12 rounded-2xl panel border-2 border-cyan-500/60 font-black text-cyan-300">▶</button>
+      </div>
+      <span class="text-[10px] font-bold text-cyan-400">STEER</span>
     </div>
 
-    <!-- Bottom Center: Question & Trick Run -->
-    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 w-full max-w-[calc(100vw-310px)] sm:max-w-xl md:max-w-2xl px-2 pointer-events-none flex flex-col items-center">
-      <div id="question-dock" class="panel-solid border border-cyan-500/40 rounded-3xl p-3 sm:p-4 shadow-2xl pointer-events-auto w-full flex flex-col items-center">
-        <div class="flex items-center justify-between w-full mb-2">
-          <div class="flex items-center gap-1.5">
-            <button type="button" onmousedown="speakTargetWord()" class="px-2.5 py-1.5 rounded-xl bg-cyan-900 border border-cyan-400/50 text-cyan-200 font-extrabold text-xs">🔊 Listen</button>
-            <button type="button" onmousedown="peekTargetWord()" class="px-2.5 py-1.5 rounded-xl bg-amber-950 border border-amber-400/50 text-amber-200 font-extrabold text-xs">👁️ Peek</button>
+    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 w-full max-w-xl px-2 pointer-events-none flex flex-col items-center">
+      <div id="q-dock" class="panel border border-cyan-500/40 rounded-3xl p-4 shadow-2xl pointer-events-auto w-full flex flex-col items-center">
+        <div class="flex justify-between w-full mb-2">
+          <div class="flex gap-1.5">
+            <button type="button" onmousedown="speakWord()" onclick="speakWord()" class="px-2.5 py-1 rounded-xl bg-cyan-900 border border-cyan-400/50 text-cyan-200 font-bold text-xs">🔊 Listen</button>
+            <button type="button" onmousedown="peekWord()" onclick="peekWord()" class="px-2.5 py-1 rounded-xl bg-amber-950 border border-amber-400/50 text-amber-200 font-bold text-xs">👁️ Peek</button>
           </div>
-          <div id="question-header-label" class="text-xs uppercase font-extrabold text-slate-300">Tap letters in order to spell</div>
-          <button type="button" onmousedown="clearSpelling()" class="text-xs font-bold text-slate-400 hover:text-white px-2 py-1 rounded-lg">↺ Reset</button>
+          <span id="q-label" class="text-xs font-extrabold text-slate-300 uppercase">Spell the word</span>
+          <button type="button" onmousedown="resetSpell()" onclick="resetSpell()" class="text-xs font-bold text-slate-400">↺ Reset</button>
         </div>
-
-        <div id="peek-banner" class="hidden w-full mb-2 py-1 px-3 rounded-xl bg-amber-500/20 border border-amber-400/60 text-center">
-          <span class="text-xs text-amber-300 font-bold">Hint: </span>
-          <span id="peek-word-text" class="text-sm font-black text-amber-100 tracking-widest font-display">BICYCLE</span>
+        <div id="peek-box" class="hidden w-full mb-2 py-1 px-3 rounded-xl bg-amber-500/20 border border-amber-400 text-center text-sm font-black text-amber-100 tracking-widest"></div>
+        <div id="view-spell" class="w-full flex flex-col items-center">
+          <div id="slots" class="flex flex-wrap justify-center gap-1.5 w-full py-2 px-2 bg-slate-950 border border-slate-800 rounded-2xl min-h-[48px] mb-2"></div>
+          <div id="chips" class="flex flex-wrap justify-center gap-1.5 w-full py-1"></div>
         </div>
-
-        <div id="view-spelling" class="w-full flex flex-col items-center">
-          <div id="target-slots-container" class="flex flex-wrap items-center justify-center gap-1.5 w-full py-1.5 px-2 bg-slate-950 border border-slate-800 rounded-2xl min-h-[48px] mb-2"></div>
-          <div id="scrambled-letters-container" class="flex flex-wrap items-center justify-center gap-1.5 w-full py-1"></div>
-        </div>
-
-        <div id="view-maths" class="w-full hidden flex-col items-center py-1">
-          <div id="math-prompt-text" class="text-2xl sm:text-3xl font-black text-yellow-300 font-display mb-3">7 × 8 = ?</div>
-          <div id="math-options-container" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full"></div>
+        <div id="view-math" class="w-full hidden flex-col items-center py-1">
+          <div id="math-q" class="text-3xl font-black text-yellow-300 font-display mb-3"></div>
+          <div id="math-opts" class="flex flex-wrap justify-center gap-3 w-full"></div>
         </div>
       </div>
 
-      <div id="trick-time-dock" class="panel-solid border-2 border-pink-500/70 rounded-3xl p-3 sm:p-4 shadow-2xl pointer-events-auto w-full hidden flex-col items-center">
-        <div class="flex items-center justify-between w-full mb-2">
-          <span class="px-3 py-1 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-black text-xs uppercase font-display">🔥 TRICK RUN UNLOCKED!</span>
-          <button type="button" onmousedown="endTrickTime()" class="text-xs font-extrabold text-cyan-300 px-2.5 py-1 rounded-lg bg-slate-800">Next ➔</button>
+      <div id="trick-dock" class="panel border-2 border-pink-500 rounded-3xl p-4 shadow-2xl pointer-events-auto w-full hidden flex-col items-center">
+        <div class="flex justify-between w-full mb-2">
+          <span class="px-3 py-1 rounded-full bg-pink-600 text-xs font-black font-display">🔥 TRICK RUN UNLOCKED!</span>
+          <button type="button" onmousedown="endTricks()" onclick="endTricks()" class="text-xs font-extrabold text-cyan-300 px-2 py-1 rounded bg-slate-800">Skip ➔</button>
         </div>
-        <div class="w-full bg-slate-950 rounded-full h-3 border border-pink-500/40 overflow-hidden mb-2">
-          <div id="trick-time-progress-bar" class="bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 h-full w-full"></div>
-        </div>
-        <div class="flex items-center justify-around w-full text-center">
-          <div><div class="text-[10px] text-slate-400 font-bold uppercase">Time Left</div><div id="trick-time-seconds" class="text-xl font-black text-yellow-300 font-display">10s</div></div>
-          <div><div class="text-[10px] text-slate-400 font-bold uppercase">Tricks</div><div id="trick-time-count" class="text-xl font-black text-cyan-400 font-display">0</div></div>
-          <div><div class="text-[10px] text-slate-400 font-bold uppercase">Bonus</div><div id="trick-time-pts" class="text-xl font-black text-emerald-400 font-display">+0</div></div>
-        </div>
+        <div class="text-xl font-black text-yellow-300 font-display">Time Left: <span id="t-sec">10</span>s | Bonus: +<span id="t-pts">0</span></div>
       </div>
     </div>
 
-    <!-- Bottom Right: 4 Trick Pads -->
-    <div id="trick-pads-cluster" class="absolute bottom-4 right-4 z-30 pointer-events-auto flex flex-col items-center opacity-25 pointer-events-none">
-      <div class="grid grid-cols-2 gap-2 p-1.5 rounded-3xl panel-solid border border-slate-700/60">
-        <button id="btn-trick-grind" type="button" onmousedown="doGrind()" class="btn-locked w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-700 border-2 border-amber-300 flex flex-col items-center justify-center text-white">
-          <span class="text-lg">⚡</span><span class="text-[10px] font-black font-display">GRIND</span>
-        </button>
-        <button id="btn-trick-flip" type="button" onmousedown="doKickflip()" class="btn-locked w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-700 border-2 border-pink-300 flex flex-col items-center justify-center text-white">
-          <span class="text-lg">🔄</span><span class="text-[10px] font-black font-display">FLIP</span>
-        </button>
-        <button id="btn-trick-shuvit" type="button" onmousedown="doShuvit()" class="btn-locked w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 border-2 border-emerald-300 flex flex-col items-center justify-center text-white">
-          <span class="text-lg">🌀</span><span class="text-[10px] font-black font-display">SHUVIT</span>
-        </button>
-        <button id="btn-trick-ollie" type="button" onmousedown="doOllie()" class="btn-locked w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-700 border-2 border-cyan-300 flex flex-col items-center justify-center text-white">
-          <span class="text-lg">🦘</span><span class="text-[10px] font-black font-display">OLLIE</span>
-        </button>
+    <div id="pad-box" class="absolute bottom-4 right-4 z-30 pointer-events-auto flex flex-col items-center opacity-25 pointer-events-none">
+      <div class="grid grid-cols-2 gap-2 p-1.5 rounded-3xl panel border border-slate-700">
+        <button type="button" onmousedown="trick('GRIND',300,0.3,0,0,0.3)" class="t-btn btn-locked w-14 h-14 rounded-2xl bg-amber-600 border-2 border-amber-300 font-black text-[10px]">⚡<br>GRIND</button>
+        <button type="button" onmousedown="trick('KICKFLIP',250,0.4,24,0,0)" class="t-btn btn-locked w-14 h-14 rounded-2xl bg-pink-600 border-2 border-pink-300 font-black text-[10px]">🔄<br>FLIP</button>
+        <button type="button" onmousedown="trick('SHUVIT',220,0.36,0,22,0)" class="t-btn btn-locked w-14 h-14 rounded-2xl bg-emerald-600 border-2 border-emerald-300 font-black text-[10px]">🌀<br>SHUVIT</button>
+        <button type="button" onmousedown="trick('OLLIE',100,0.38,0,0,0)" class="t-btn btn-locked w-14 h-14 rounded-2xl bg-cyan-600 border-2 border-cyan-300 font-black text-[10px]">🦘<br>OLLIE</button>
       </div>
-      <div id="trick-pads-label" class="text-[10px] uppercase font-bold text-pink-400 mt-1">LOCKED</div>
     </div>
 
-    <!-- SETTINGS MODAL -->
-    <div id="modal-settings" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950 overflow-y-auto">
-      <div class="panel-solid border-2 border-cyan-500/50 rounded-3xl max-w-xl w-full p-5 sm:p-7 shadow-2xl text-center space-y-4">
-        <div class="flex items-center justify-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500 to-pink-500 flex items-center justify-center text-2xl">🛹</div>
-          <div class="text-left">
-            <h1 class="text-2xl sm:text-3xl font-black text-white font-display">Skate & Learn</h1>
-            <p class="text-xs sm:text-sm text-cyan-300 font-bold">Right answers unlock the Skate Park. Then trick out!</p>
-          </div>
+    <div id="modal-set" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/95">
+      <div class="panel border-2 border-cyan-500/50 rounded-3xl max-w-lg w-full p-6 text-center space-y-4">
+        <h1 class="text-2xl font-black font-display">🛹 Skate & Learn</h1>
+        <div class="flex flex-wrap justify-center gap-1.5" id="modes">
+          <button type="button" onmousedown="setMode('spellings',this)" onclick="setMode('spellings',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 text-slate-950">Spellings</button>
+          <button type="button" onmousedown="setMode('tables',this)" onclick="setMode('tables',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Times tables</button>
+          <button type="button" onmousedown="setMode('division',this)" onclick="setMode('division',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Division</button>
+          <button type="button" onmousedown="setMode('doubles',this)" onclick="setMode('doubles',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Doubles</button>
+          <button type="button" onmousedown="setMode('halves',this)" onclick="setMode('halves',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Halves</button>
+          <button type="button" onmousedown="setMode('bonds',this)" onclick="setMode('bonds',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Number bonds</button>
         </div>
-
-        <div>
-          <div class="text-xs font-black tracking-widest text-cyan-400 uppercase mb-2">WHAT TO PRACTISE?</div>
-          <div class="flex flex-wrap justify-center gap-2" id="practise-mode-group">
-            <button type="button" onmousedown="selectMode('spellings', this)" class="mode-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-gradient-to-r from-amber-500 to-pink-500 text-slate-950 border-2 border-white">Spellings</button>
-            <button type="button" onmousedown="selectMode('tables', this)" class="mode-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-slate-800 text-slate-300 border border-slate-700">Times tables</button>
-            <button type="button" onmousedown="selectMode('division', this)" class="mode-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-slate-800 text-slate-300 border border-slate-700">Division facts</button>
-            <button type="button" onmousedown="selectMode('doubles', this)" class="mode-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-slate-800 text-slate-300 border border-slate-700">Doubles</button>
-            <button type="button" onmousedown="selectMode('halves', this)" class="mode-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-slate-800 text-slate-300 border border-slate-700">Halves</button>
-            <button type="button" onmousedown="selectMode('bonds', this)" class="mode-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-slate-800 text-slate-300 border border-slate-700">Number bonds</button>
-          </div>
+        <div id="sec-tbl" class="hidden flex flex-wrap justify-center gap-1">
+          <script>for(let i=2;i<=12;i++)document.write(`<button type="button" onmousedown="togTbl(${i},this)" onclick="togTbl(${i},this)" class="tb-btn w-9 h-8 rounded-lg text-xs font-black ${[2,5,10].includes(i)?'bg-amber-500 text-slate-950':'bg-slate-800 text-slate-300'}">${i}×</button>`);</script>
         </div>
-
-        <div id="section-which-tables" class="hidden">
-          <div class="text-xs font-black tracking-widest text-cyan-400 uppercase mb-2">WHICH TABLES?</div>
-          <div class="flex flex-wrap justify-center gap-1.5" id="tables-selector-group">
-            <button type="button" onmousedown="toggleTable(2, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-amber-500 text-slate-950 border-2 border-white">2×</button>
-            <button type="button" onmousedown="toggleTable(3, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">3×</button>
-            <button type="button" onmousedown="toggleTable(4, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">4×</button>
-            <button type="button" onmousedown="toggleTable(5, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-amber-500 text-slate-950 border-2 border-white">5×</button>
-            <button type="button" onmousedown="toggleTable(6, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">6×</button>
-            <button type="button" onmousedown="toggleTable(7, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">7×</button>
-            <button type="button" onmousedown="toggleTable(8, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">8×</button>
-            <button type="button" onmousedown="toggleTable(9, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">9×</button>
-            <button type="button" onmousedown="toggleTable(10, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-amber-500 text-slate-950 border-2 border-white">10×</button>
-            <button type="button" onmousedown="toggleTable(11, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">11×</button>
-            <button type="button" onmousedown="toggleTable(12, this)" class="tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">12×</button>
-            <button type="button" onmousedown="selectAllTables(this)" class="tbl-btn px-2.5 h-9 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700">All</button>
-          </div>
-        </div>
-
-        <div id="section-spelling-input" class="space-y-2 text-left">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-black tracking-widest text-cyan-400 uppercase">YOUR WEEKLY SPELLINGS</span>
-            <div class="flex gap-1.5">
-              <button type="button" onmousedown="loadPresetWords('y34')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded-lg border border-slate-700 text-cyan-300 font-bold">Y3/4 Sample</button>
-              <button type="button" onmousedown="loadPresetWords('y56')" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded-lg border border-slate-700 text-cyan-300 font-bold">Y5/6 Sample</button>
-            </div>
-          </div>
-          <textarea id="input-spellings-list" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm font-semibold text-cyan-300 uppercase tracking-wider resize-none">BICYCLE
+        <div id="sec-words" class="text-left space-y-1">
+          <span class="text-xs font-black text-cyan-400">WEEKLY SPELLINGS</span>
+          <textarea id="inp-words" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-2 text-xs font-bold text-cyan-300 uppercase">BICYCLE
 CALENDAR
 GRAMMAR
 ISLAND
-PROMISE
-QUARTER
-SEPARATE
-STRENGTH
-SURPRISE
-WEIGHT</textarea>
+PROMISE</textarea>
         </div>
-
-        <div class="pt-2 pb-1 border-t border-b border-slate-800">
-          <div class="text-xs font-black tracking-widest text-pink-400 uppercase mb-2">🛹 DO TRICKS AFTER HOW MANY RIGHT ANSWERS?</div>
-          <div class="flex items-center justify-center gap-2" id="trick-threshold-group">
-            <button type="button" onmousedown="selectThreshold(1, this)" class="threshold-pill w-12 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-slate-800 text-slate-300 border border-slate-700">1</button>
-            <button type="button" onmousedown="selectThreshold(2, this)" class="threshold-pill w-12 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-slate-800 text-slate-300 border border-slate-700">2</button>
-            <button type="button" onmousedown="selectThreshold(3, this)" class="threshold-pill w-12 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-pink-500 text-slate-950 border-2 border-white">3</button>
-            <button type="button" onmousedown="selectThreshold(5, this)" class="threshold-pill w-12 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-slate-800 text-slate-300 border border-slate-700">5</button>
-            <button type="button" onmousedown="selectThreshold(8, this)" class="threshold-pill w-12 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-slate-800 text-slate-300 border border-slate-700">8</button>
-          </div>
-          <p class="text-[11px] text-slate-400 mt-1.5">Answer <strong id="label-answers-needed" class="text-yellow-300 font-black">3</strong> questions correctly to earn a high-speed Trick Run!</p>
+        <div class="flex justify-center items-center gap-2">
+          <span class="text-xs font-bold text-pink-400">Tricks after:</span>
+          <button type="button" onmousedown="setGoal(1,this)" onclick="setGoal(1,this)" class="g-btn w-10 py-1 rounded-lg text-xs font-black bg-slate-800">1</button>
+          <button type="button" onmousedown="setGoal(3,this)" onclick="setGoal(3,this)" class="g-btn w-10 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950">3</button>
+          <button type="button" onmousedown="setGoal(5,this)" onclick="setGoal(5,this)" class="g-btn w-10 py-1 rounded-lg text-xs font-black bg-slate-800">5</button>
         </div>
-
-        <div class="pt-2">
-          <button type="button" onmousedown="startGameFromSettings()" class="w-full sm:w-3/4 mx-auto py-3.5 rounded-3xl bg-gradient-to-r from-rose-500 via-pink-500 to-purple-600 text-white font-black text-lg sm:text-xl shadow-xl flex items-center justify-center gap-2.5 font-display border-2 border-white/50">
-            <span>🛹</span> <span>Drop In & Skate!</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- SHARE MODAL -->
-    <div id="modal-share-instructions" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 hidden">
-      <div class="panel-solid border border-cyan-500/50 rounded-3xl max-w-lg w-full p-6 space-y-4">
-        <div class="flex justify-between items-center pb-2 border-b border-slate-700">
-          <h2 class="text-lg font-extrabold text-cyan-400">🔗 Send Game to Pupil's iPad</h2>
-          <button type="button" onmousedown="closeShareModal()" class="text-slate-400 hover:text-white text-2xl font-bold">×</button>
-        </div>
-        <p class="text-xs text-slate-300">Share this direct web link with your pupil: <code class="text-cyan-300">https://mjbowen147.github.io/apps/</code></p>
-        <button type="button" onmousedown="closeShareModal()" class="w-full py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs">Close</button>
-      </div>
-    </div>
-
-    <!-- GAME OVER MODAL -->
-    <div id="modal-game-over" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 hidden">
-      <div class="panel-solid border-2 border-yellow-400/70 rounded-3xl max-w-sm w-full p-6 text-center space-y-4">
-        <div class="text-5xl">🏆</div>
-        <h2 class="text-2xl font-black text-yellow-300 font-display">SESSION COMPLETED!</h2>
-        <div class="bg-slate-900 rounded-2xl p-4 border border-slate-700 space-y-2 text-xs">
-          <div class="flex justify-between"><span class="text-slate-400">Total Tricks:</span><span id="final-tricks-count" class="font-extrabold text-cyan-300">0</span></div>
-          <div class="flex justify-between"><span class="text-slate-400">Total Score:</span><span id="final-score-val" class="font-black text-emerald-400 text-base">0 PTS</span></div>
-        </div>
-        <button type="button" onmousedown="restartGame()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-950 font-black text-base font-display">Skate Again 🛹</button>
+        <button type="button" onmousedown="startGame()" onclick="startGame()" class="w-3/4 mx-auto py-3.5 rounded-3xl bg-gradient-to-r from-rose-500 to-purple-600 text-white font-black text-lg font-display border-2 border-white/50">🛹 Drop In & Skate!</button>
       </div>
     </div>
   </div>
 
   <script>
-    const PRESET_Y34_WORDS = ["BICYCLE", "CALENDAR", "GRAMMAR", "ISLAND", "PROMISE", "QUARTER", "SEPARATE", "STRENGTH", "SURPRISE", "WEIGHT"];
-    const PRESET_Y56_WORDS = ["ACCOMMODATE", "APPARENT", "CEMETERY", "CONSCIOUS", "EMBARRASS", "GUARANTEE", "IMMEDIATELY", "NECESSARY", "PRIVILEGE", "RHYTHM"];
+    let words=["BICYCLE","CALENDAR","GRAMMAR","ISLAND","PROMISE"],wIdx=0,target="",scrambled=[],placed=[];
+    let mode="spellings",tables=[2,5,10],goal=3,streak=0,score=0,bonus=0,inTricks=false,tTimer=null,tLeft=10;
+    let paused=true,muted=false,actx=null,lastTap=0;
 
-    let spellingList = [...PRESET_Y34_WORDS], currentWordIndex = 0, targetWord = "", scrambledLetters = [], placedLetters = [];
-    let isTrickTime = false, trickTimeTimer = null, trickTimeRemaining = 10;
-    let totalScore = 0, tricksCount = 0, trickTimeBonusPts = 0, trickTimeCount = 0, comboStreak = 0;
-    let practiceMode = "spellings", selectedTables = [2, 5, 10], questionsBeforeTrick = 3, correctAnswersStreak = 0;
-    let gamePausedForModal = true, audioMuted = false, audioCtx = null;
+    function tapOk(){const n=Date.now();if(n-lastTap<180)return false;lastTap=n;return true;}
+    function beep(f,d=0.12){if(muted)return;try{if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=f;g.gain.value=0.15;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+d);}catch(e){}}
+    function toggleMute(){if(!tapOk())return;muted=!muted;document.getElementById('btn-mute').textContent=muted?'🔇':'🔊';}
+    function setMode(m,el){if(!tapOk())return;mode=m;document.querySelectorAll('.m-btn').forEach(b=>b.className="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300");el.className="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 text-slate-950";document.getElementById('sec-words').classList.toggle('hidden',m!=='spellings');document.getElementById('sec-tbl').classList.toggle('hidden',m!=='tables'&&m!=='division');}
+    function togTbl(n,el){if(!tapOk())return;tables=tables.includes(n)?tables.filter(x=>x!==n):[...tables,n];if(!tables.length)tables=[2];el.className=`tb-btn w-9 h-8 rounded-lg text-xs font-black ${tables.includes(n)?'bg-amber-500 text-slate-950':'bg-slate-800 text-slate-300'}`;}
+    function setGoal(n,el){if(!tapOk())return;goal=n;document.querySelectorAll('.g-btn').forEach(b=>b.className="g-btn w-10 py-1 rounded-lg text-xs font-black bg-slate-800");el.className="g-btn w-10 py-1 rounded-lg text-xs font-black bg-amber-500 text-slate-950";}
+    function openSettings(){if(!tapOk())return;paused=true;document.getElementById('modal-set').classList.remove('hidden');}
+    function startGame(){if(!tapOk())return;beep(520);const raw=document.getElementById('inp-words').value.split('\n').map(s=>s.trim().toUpperCase()).filter(Boolean);if(raw.length)words=raw;document.getElementById('modal-set').classList.add('hidden');paused=false;score=0;streak=0;wIdx=0;loadQ();}
 
-    function initAudio() {
-      try {
-        if (!audioCtx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) audioCtx = new AC(); }
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
-      } catch (e) {}
-    }
+    function speakWord(){if(!tapOk())return;try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(target.toLowerCase());u.lang='en-GB';window.speechSynthesis.speak(u);}catch(e){}}
+    function peekWord(){if(!tapOk())return;const b=document.getElementById('peek-box');b.textContent="Hint: "+target;b.classList.remove('hidden');setTimeout(()=>b.classList.add('hidden'),3000);}
+    function resetSpell(){if(!tapOk())return;placed=[];scrambled.forEach(l=>l.p=false);drawSpell();}
 
-    function playTone(freq, type, dur, vol = 0.18) {
-      if (audioMuted || !audioCtx) return;
-      try {
-        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + dur);
-      } catch (e) {}
-    }
-
-    function toggleAudio() {
-      audioMuted = !audioMuted;
-      document.getElementById('btn-audio-toggle').textContent = audioMuted ? '🔇' : '🔊';
-    }
-
-    function speakTargetWord() {
-      initAudio();
-      if (!('speechSynthesis' in window)) return;
-      try { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(targetWord.toLowerCase()); u.rate = 0.85; u.lang = 'en-GB'; window.speechSynthesis.speak(u); } catch (e) {}
-    }
-
-    function peekTargetWord() {
-      initAudio();
-      document.getElementById('peek-word-text').textContent = targetWord;
-      const b = document.getElementById('peek-banner');
-      b.classList.remove('hidden');
-      clearTimeout(b._t);
-      b._t = setTimeout(() => b.classList.add('hidden'), 3500);
-    }
-
-    function selectMode(mode, el) {
-      initAudio();
-      practiceMode = mode;
-      document.querySelectorAll('.mode-pill').forEach(p => {
-        p.className = "mode-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-slate-800 text-slate-300 border border-slate-700";
-      });
-      el.className = "mode-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-gradient-to-r from-amber-500 to-pink-500 text-slate-950 border-2 border-white";
-      document.getElementById('section-spelling-input').classList.toggle('hidden', mode !== 'spellings');
-      document.getElementById('section-which-tables').classList.toggle('hidden', mode !== 'tables' && mode !== 'division');
-    }
-
-    function toggleTable(num, el) {
-      initAudio();
-      if (selectedTables.includes(num)) {
-        selectedTables = selectedTables.filter(x => x !== num);
-        el.className = "tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-slate-800 text-slate-300 border border-slate-700";
-      } else {
-        selectedTables.push(num);
-        el.className = "tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-amber-500 text-slate-950 border-2 border-white";
+    function loadQ(){
+      inTricks=false;unlockPads(false);
+      document.getElementById('q-dock').classList.remove('hidden');
+      document.getElementById('trick-dock').classList.add('hidden');
+      document.getElementById('hud-streak').textContent=`${streak} / ${goal}`;
+      if(mode==='spellings'){
+        document.getElementById('view-spell').classList.remove('hidden');
+        document.getElementById('view-math').classList.add('hidden');
+        target=words[wIdx%words.length];placed=[];
+        scrambled=target.split('').map((c,i)=>({c,i,p:false})).sort(()=>Math.random()-0.5);
+        drawSpell();
+      }else{
+        document.getElementById('view-spell').classList.add('hidden');
+        document.getElementById('view-math').classList.remove('hidden');
+        drawMath();
       }
-      if (selectedTables.length === 0) selectedTables = [2];
     }
 
-    function selectAllTables(el) {
-      initAudio();
-      selectedTables = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-      document.querySelectorAll('.tbl-btn').forEach(b => {
-        b.className = "tbl-btn w-10 h-9 rounded-xl text-xs font-black bg-amber-500 text-slate-950 border-2 border-white";
-      });
-      el.className = "tbl-btn px-2.5 h-9 rounded-xl text-xs font-black bg-amber-500 text-slate-950 border-2 border-white";
-    }
-
-    function loadPresetWords(type) {
-      document.getElementById('input-spellings-list').value = (type === 'y34' ? PRESET_Y34_WORDS : PRESET_Y56_WORDS).join('\n');
-    }
-
-    function selectThreshold(num, el) {
-      initAudio();
-      questionsBeforeTrick = num;
-      document.querySelectorAll('.threshold-pill').forEach(p => {
-        p.className = "threshold-pill w-12 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-slate-800 text-slate-300 border border-slate-700";
-      });
-      el.className = "threshold-pill w-12 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-gradient-to-r from-amber-400 to-pink-500 text-slate-950 border-2 border-white";
-      document.getElementById('label-answers-needed').textContent = num;
-    }
-
-    function openSettingsModal() {
-      initAudio();
-      gamePausedForModal = true;
-      document.getElementById('input-spellings-list').value = spellingList.join('\n');
-      document.getElementById('modal-settings').classList.remove('hidden');
-    }
-
-    function startGameFromSettings() {
-      initAudio();
-      if (practiceMode === 'spellings') {
-        const raw = document.getElementById('input-spellings-list').value.split('\n').map(s => s.trim().toUpperCase()).filter(Boolean);
-        if (raw.length > 0) spellingList = raw;
+    function drawSpell(){
+      const sEl=document.getElementById('slots'),cEl=document.getElementById('chips');
+      sEl.innerHTML='';cEl.innerHTML='';
+      for(let i=0;i<target.length;i++){
+        const b=document.createElement('button');b.type='button';
+        b.className=placed[i]?"w-9 h-10 rounded-xl bg-cyan-500/30 border-2 border-cyan-400 font-black":"w-9 h-10 rounded-xl border-2 border-dashed border-slate-700 text-slate-600 pointer-events-none";
+        b.textContent=placed[i]?placed[i].c:'_';
+        if(placed[i])b.onmousedown=b.onclick=()=>{if(!tapOk())return;placed.splice(i,1)[0].p=false;drawSpell();};
+        sEl.appendChild(b);
       }
-      document.getElementById('modal-settings').classList.add('hidden');
-      gamePausedForModal = false;
-      totalScore = 0; tricksCount = 0; comboStreak = 0; correctAnswersStreak = 0;
-      document.getElementById('hud-score-val').textContent = '0';
-      loadQuestion(0);
+      scrambled.forEach(item=>{
+        if(!item.p){
+          const c=document.createElement('button');c.type='button';
+          c.className="w-9 h-10 rounded-xl bg-slate-800 border-2 border-cyan-500/50 text-cyan-300 font-black";
+          c.textContent=item.c;
+          c.onmousedown=c.onclick=()=>{if(!tapOk())return;beep(620,0.05);item.p=true;placed.push(item);drawSpell();if(placed.length===target.length){if(placed.map(x=>x.c).join('')===target){wIdx++;winQ();}else beep(140,0.25);}};
+          cEl.appendChild(c);
+        }
+      });
     }
 
-    function openShareModal() { gamePausedForModal = true; document.getElementById('modal-share-instructions').classList.remove('hidden'); }
-    function closeShareModal() { document.getElementById('modal-share-instructions').classList.add('hidden'); gamePausedForModal = false; }
-    function restartGame() { document.getElementById('modal-game-over').classList.add('hidden'); startGameFromSettings(); }
-
-    const canvas = document.getElementById('webgl-canvas');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0c1322);
-    const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 150);
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    scene.add(new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 1));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1); dirLight.position.set(10, 20, 10); scene.add(dirLight);
-
-    const roadMesh = new THREE.Mesh(new THREE.PlaneGeometry(10.5, 180), new THREE.MeshStandardMaterial({ color: 0x1a202c }));
-    roadMesh.rotation.x = -Math.PI / 2; scene.add(roadMesh);
-
-    const roadDashes = [];
-    for (let i = -90; i < 90; i += 5) {
-      const d = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 2.5), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
-      d.rotation.x = -Math.PI / 2; d.position.set(0, 0.02, i); scene.add(d); roadDashes.push(d);
+    function drawMath(){
+      const t=tables[Math.floor(Math.random()*tables.length)]||2,m=Math.floor(Math.random()*12)+1;
+      let q="",a=0;
+      if(mode==='tables'){q=`${m} × ${t}`;a=m*t;}
+      else if(mode==='division'){q=`${m*t} ÷ ${t}`;a=m;}
+      else if(mode==='doubles'){const n=Math.floor(Math.random()*40)+1;q=`Double ${n}`;a=n*2;}
+      else if(mode==='halves'){const n=(Math.floor(Math.random()*25)+1)*2;q=`Half of ${n}`;a=n/2;}
+      else{const n=Math.floor(Math.random()*19)+1;q=`${n} + ? = 20`;a=20-n;}
+      target=String(a);document.getElementById('math-q').textContent=`${q} = ?`;
+      const opts=new Set([a]);while(opts.size<4)opts.add(Math.max(0,a+Math.floor(Math.random()*9)-4));
+      const box=document.getElementById('math-opts');box.innerHTML='';
+      [...opts].sort(()=>Math.random()-0.5).forEach(v=>{
+        const b=document.createElement('button');b.type='button';
+        b.className="px-6 py-2.5 rounded-2xl bg-slate-800 border-2 border-cyan-500/50 text-cyan-200 text-lg font-black";
+        b.textContent=v;
+        b.onmousedown=b.onclick=()=>{if(!tapOk())return;if(v===a)winQ();else{beep(140,0.25);b.classList.add('border-red-500');}};
+        box.appendChild(b);
+      });
     }
 
-    const skateboardGroup = new THREE.Group();
-    skateboardGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.06, 2.4), new THREE.MeshStandardMaterial({ color: 0x0f172a })));
-    const grip = new THREE.Mesh(new THREE.PlaneGeometry(0.54, 2.1), new THREE.MeshBasicMaterial({ color: 0x06b6d4 }));
+    function winQ(){
+      beep(784,0.2);streak++;document.getElementById('hud-streak').textContent=`${streak} / ${goal}`;
+      if(streak>=goal){streak=0;startTricks();}else{showMsg("CORRECT!");setTimeout(loadQ,600);}
+    }
+
+    function startTricks(){
+      inTricks=true;tLeft=10;bonus=0;unlockPads(true);
+      document.getElementById('q-dock').classList.add('hidden');
+      document.getElementById('trick-dock').classList.remove('hidden');
+      document.getElementById('t-sec').textContent=10;document.getElementById('t-pts').textContent=0;
+      clearInterval(tTimer);
+      tTimer=setInterval(()=>{tLeft--;document.getElementById('t-sec').textContent=tLeft;if(tLeft<=0)endTricks();},1000);
+    }
+    function endTricks(){clearInterval(tTimer);loadQ();}
+    function unlockPads(u){const p=document.getElementById('pad-box');p.classList.toggle('opacity-25',!u);p.classList.toggle('pointer-events-none',!u);document.querySelectorAll('.t-btn').forEach(b=>b.classList.toggle('btn-locked',!u));}
+    function showMsg(txt){const b=document.getElementById('banner');b.textContent=txt;b.classList.remove('opacity-0');setTimeout(()=>b.classList.add('opacity-0'),900);}
+
+    const scene=new THREE.Scene();scene.background=new THREE.Color(0x0c1322);
+    const cam=new THREE.PerspectiveCamera(54,window.innerWidth/window.innerHeight,0.1,150);
+    const ren=new THREE.WebGLRenderer({canvas:document.getElementById('webgl-canvas'),antialias:true});
+    ren.setSize(window.innerWidth,window.innerHeight);
+    scene.add(new THREE.HemisphereLight(0xdbeafe,0x1e293b,1.2));
+    const road=new THREE.Mesh(new THREE.PlaneGeometry(10,180),new THREE.MeshStandardMaterial({color:0x1a202c}));
+    road.rotation.x=-Math.PI/2;scene.add(road);
+    const dashes=[];for(let i=-90;i<90;i+=6){const d=new THREE.Mesh(new THREE.PlaneGeometry(0.3,2.5),new THREE.MeshBasicMaterial({color:0xfacc15}));d.rotation.x=-Math.PI/2;d.position.set(0,0.02,i);scene.add(d);dashes.push(d);}
+    const board=new THREE.Group();
+    board.add(new THREE.Mesh(new THREE.BoxGeometry(0.75,0.06,2.4),new THREE.MeshBasicMaterial({color:0x06b6d4})));
+    board.position.set(0,0.38,-2.5);scene.add(board);
+    cam.position.set(0,5.2,9.6);cam.lookAt(0,0.8,-1.8);
+
+    let bx=0,by=0.38,vy=0,fx=0,fs=0,sy=0,ss=0,gt=0,stDir=0;
+    function steer(d){stDir=d;}
+    function trick(name,pts,pop,fSpd,sSpd,tilt){
+      if(!tapOk())return;beep(440,0.15);vy=pop;fs=fSpd;ss=sSpd;gt=tilt;
+      score+=pts;bonus+=pts;document.getElementById('hud-score').textContent=score;
+      document.getElementById('t-pts').textContent=bonus;showMsg(name+"! +"+pts);
+    }
+
+    const clk=new THREE.Clock();
+    function loop(){
+      requestAnimationFrame(loop);if(paused)return;
+      const dt=Math.min(clk.getDelta(),0.1);
+      bx=Math.max(-4,Math.min(4,bx+stDir*7*dt));
+      dashes.forEach(d=>{d.position.z+=(inTricks?35:18)*dt;if(d.position.z>90)d.position.z-=180;});
+      if(by>0.38||vy>0){vy-=1.3*dt;by+=vy;if(by<=0.38){by=0.38;vy=0;gt=0;}}
+      if(fs>0){fx+=fs*dt;if(fx>=Math.PI*2){fx=0;fs=0;}}
+      if(ss>0){sy+=ss*dt;if(sy>=Math.PI*2){sy=0;ss=0;}}
+      board.position.set(bx,by,-2.5);board.rotation.set(0,sy,fx+gt);
+      ren.render(scene,cam);
+    }
+    loop();
+  </script>
+</body>
+</html>
