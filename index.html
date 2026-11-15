@@ -24,6 +24,10 @@
       -webkit-tap-highlight-color: transparent;
       box-sizing: border-box;
     }
+    input, textarea {
+      user-select: text;
+      -webkit-user-select: text;
+    }
     body, html {
       margin: 0;
       padding: 0;
@@ -46,7 +50,7 @@
       height: 100vh;
       height: 100dvh;
       overflow: hidden;
-      touch-action: none;
+      touch-action: manipulation;
     }
 
     #webgl-canvas {
@@ -57,6 +61,12 @@
       height: 100%;
       display: block;
       z-index: 1;
+      touch-action: none;
+    }
+
+    button, [role="button"], .cursor-pointer {
+      touch-action: manipulation;
+      cursor: pointer;
     }
 
     .trick-btn {
@@ -132,7 +142,7 @@
 
   <div id="app-container">
     <!-- Three.js Canvas -->
-    <canvas id="webgl-canvas"></canvas>
+    <canvas id="webgl-canvas" tabindex="0"></canvas>
 
     <!-- Top HUD -->
     <header class="absolute top-0 left-0 right-0 z-30 p-2 sm:p-3 flex justify-between items-center pointer-events-none">
@@ -376,7 +386,9 @@
               </button>
             </div>
           </div>
-          <textarea id="input-spellings-list" rows="3" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm font-semibold text-cyan-300 focus:outline-none focus:border-cyan-400 uppercase tracking-wider resize-none" placeholder="BICYCLE&#10;CALENDAR&#10;GRAMMAR..."></textarea>
+          <textarea id="input-spellings-list" rows="3" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-2.5 text-xs sm:text-sm font-semibold text-cyan-300 focus:outline-none focus:border-cyan-400 uppercase tracking-wider resize-none" placeholder="BICYCLE
+CALENDAR
+GRAMMAR..."></textarea>
         </div>
 
         <!-- TRICK RUN AFTER X RIGHT ANSWERS -->
@@ -412,7 +424,7 @@
           <h2 class="text-lg sm:text-xl font-extrabold text-cyan-400 flex items-center gap-2">
             🔗 Send Game to Pupil's iPad
           </h2>
-          <button id="btn-close-share-instructions" type="button" class="text-slate-400 hover:text-white text-2xl font-bold leading-none p-1 cursor-pointer">&times;</button>
+          <button id="btn-close-share-instructions" type="button" class="text-slate-400 hover:text-white text-2xl font-bold leading-none p-1 cursor-pointer">×</button>
         </div>
 
         <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-emerald-500/50 space-y-2.5">
@@ -426,7 +438,7 @@
         </div>
 
         <div class="p-3 rounded-2xl bg-slate-900/90 border border-cyan-500/40 space-y-2">
-          <span class="px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-400 font-black text-xs">FREE WEB LINK (10 SECONDS)</span>
+          <span class="px-2.5 py-0.5 rounded-md bg-cyan-500/20 text-cyan-400 font-black text-xs">FREE WEB LINK (10 SECONDS)</span>
           <p class="text-xs text-slate-300 leading-relaxed">
             Want a web link (e.g. <code class="text-cyan-300">myschool.tiiny.site</code>)? Drag the downloaded file onto Tiiny.host or Netlify Drop:
           </p>
@@ -475,6 +487,25 @@
 
   <script>
     /* ==========================================
+       HYPERBEAM / REMOTE STREAM FAST-TAP HELPER
+       ========================================== */
+    function bindFastTap(el, handler) {
+      if (!el) return;
+      let lastTriggerTime = 0;
+      const trigger = (e) => {
+        const now = Date.now();
+        if (now - lastTriggerTime < 220) return;
+        lastTriggerTime = now;
+        if (e && e.cancelable && e.type !== 'click') {
+          e.preventDefault();
+        }
+        handler(e);
+      };
+      el.addEventListener('pointerdown', trigger);
+      el.addEventListener('click', trigger);
+    }
+
+    /* ==========================================
        DATA & STATE
        ========================================== */
     const PRESET_Y34_WORDS = [
@@ -515,13 +546,15 @@
         this.muted = false;
       }
       init() {
-        if (!this.ctx) {
-          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-          if (AudioContextClass) this.ctx = new AudioContextClass();
-        }
-        if (this.ctx && this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
+        try {
+          if (!this.ctx) {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) this.ctx = new AudioContextClass();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        } catch (e) {}
       }
       playOlliePop() {
         if (this.muted || !this.ctx) return;
@@ -778,7 +811,7 @@
 
     /* ==========================================
        PHYSICS & TRICK ENGINE
-       ========================================= */
+       ========================================== */
     const physics = {
       x: 0,
       y: boardRestY,
@@ -961,17 +994,14 @@
       joystickKnob.style.transform = `translate(0px, 0px)`;
     }
 
-    joystickBase.addEventListener('mousedown', handleJoystickStart);
-    window.addEventListener('mousemove', handleJoystickMove);
-    window.addEventListener('mouseup', handleJoystickEnd);
-
-    joystickBase.addEventListener('touchstart', handleJoystickStart, { passive: false });
-    window.addEventListener('touchmove', handleJoystickMove, { passive: false });
-    window.addEventListener('touchend', handleJoystickEnd);
-    window.addEventListener('touchcancel', handleJoystickEnd);
+    joystickBase.addEventListener('pointerdown', handleJoystickStart);
+    window.addEventListener('pointermove', handleJoystickMove);
+    window.addEventListener('pointerup', handleJoystickEnd);
+    window.addEventListener('pointercancel', handleJoystickEnd);
 
     const keys = {};
     window.addEventListener('keydown', (e) => {
+      if (document.activeElement && (document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT')) return;
       keys[e.key.toLowerCase()] = true;
       if (e.key === ' ' || e.key === 'ArrowUp') doOllie();
       if (e.key === 'k' || e.key === 'f') doKickflip();
@@ -993,10 +1023,7 @@
       [btnShuvit, doShuvit],
       [btnGrind, doGrind]
     ].forEach(([btn, action]) => {
-      btn.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        action();
-      });
+      bindFastTap(btn, action);
     });
 
     /* ==========================================
@@ -1020,12 +1047,12 @@
     const trickPadsLabel = document.getElementById('trick-pads-label');
     let peekTimer = null;
 
-    btnSpeakWord.onclick = () => {
+    bindFastTap(btnSpeakWord, () => {
       audio.init();
       speakTargetWord();
-    };
+    });
 
-    btnPeekWord.onclick = () => {
+    bindFastTap(btnPeekWord, () => {
       audio.init();
       peekWordText.textContent = targetWord;
       peekBanner.classList.remove('hidden');
@@ -1033,7 +1060,7 @@
       peekTimer = setTimeout(() => {
         peekBanner.classList.add('hidden');
       }, 3500);
-    };
+    });
 
     function setTrickButtonsUnlocked(unlocked) {
       if (trickPadsCluster) {
@@ -1179,7 +1206,7 @@
         btn.type = 'button';
         btn.className = "px-6 py-2.5 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 hover:from-cyan-900 border-2 border-cyan-500/50 text-cyan-200 text-lg font-black font-display shadow-md active:scale-95 transition cursor-pointer";
         btn.textContent = val;
-        btn.onclick = () => {
+        bindFastTap(btn, () => {
           audio.init();
           if (val === ans) {
             handleAnswerSuccess();
@@ -1187,7 +1214,7 @@
             audio.playWrongBuzz();
             btn.classList.add('border-red-500', 'text-red-400');
           }
-        };
+        });
         mathOptionsContainer.appendChild(btn);
       });
     }
@@ -1197,18 +1224,19 @@
       const sizes = getAdaptiveSizeClasses(targetWord.length);
 
       for (let i = 0; i < targetWord.length; i++) {
-        const slot = document.createElement('div');
+        const slot = document.createElement('button');
+        slot.type = 'button';
         const letterObj = placedLetters[i];
 
         if (letterObj) {
           slot.className = `flex-shrink-0 flex items-center justify-center rounded-xl bg-cyan-500/25 border-2 border-cyan-400 text-cyan-200 shadow font-display cursor-pointer ${sizes.slot}`;
           slot.textContent = letterObj.char;
-          slot.onclick = () => {
+          bindFastTap(slot, () => {
             audio.init();
             removePlacedLetter(i);
-          };
+          });
         } else {
-          slot.className = `flex-shrink-0 flex items-center justify-center rounded-xl border-2 border-dashed border-slate-700 bg-slate-900/50 text-slate-600 ${sizes.slot}`;
+          slot.className = `flex-shrink-0 flex items-center justify-center rounded-xl border-2 border-dashed border-slate-700 bg-slate-900/50 text-slate-600 pointer-events-none ${sizes.slot}`;
           slot.textContent = "_";
         }
         targetSlotsContainer.appendChild(slot);
@@ -1225,10 +1253,10 @@
           chip.type = "button";
           chip.className = `letter-chip flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 hover:from-cyan-900 hover:to-slate-800 border-2 border-cyan-500/50 text-cyan-300 shadow-md cursor-pointer font-display active:scale-90 ${sizes.chip}`;
           chip.textContent = item.char;
-          chip.onclick = () => {
+          bindFastTap(chip, () => {
             audio.init();
             selectLetter(index);
-          };
+          });
           scrambledContainer.appendChild(chip);
         } else {
           const placeholder = document.createElement('div');
@@ -1264,13 +1292,13 @@
       }
     }
 
-    btnClearSpelling.onclick = () => {
+    bindFastTap(btnClearSpelling, () => {
       audio.init();
       placedLetters = [];
       scrambledLetters.forEach(l => l.placed = false);
       renderLetterSlots();
       renderScrambledChips();
-    };
+    });
 
     function checkConstructedWord() {
       const spelled = placedLetters.map(l => l.char).join('');
@@ -1343,10 +1371,10 @@
       loadQuestion(currentWordIndex + 1);
     }
 
-    document.getElementById('btn-skip-trick-time').onclick = () => {
+    bindFastTap(document.getElementById('btn-skip-trick-time'), () => {
       audio.init();
       endTrickTime();
-    };
+    });
 
     /* ==========================================
        SETTINGS & MODALS
@@ -1366,8 +1394,8 @@
     const labelAnswersNeeded = document.getElementById('label-answers-needed');
 
     modePills.forEach(pill => {
-      pill.addEventListener('click', () => {
-        try { audio.init(); } catch(e) {}
+      bindFastTap(pill, () => {
+        audio.init();
         modePills.forEach(p => {
           p.className = "mode-pill px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-slate-800/90 text-slate-300 border border-slate-700 hover:text-white";
         });
@@ -1388,8 +1416,8 @@
     });
 
     tableButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        try { audio.init(); } catch(e) {}
+      bindFastTap(btn, () => {
+        audio.init();
         const val = btn.getAttribute('data-table');
         if (val === 'all') {
           selectedTables = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -1412,8 +1440,8 @@
     });
 
     thresholdPills.forEach(pill => {
-      pill.addEventListener('click', () => {
-        try { audio.init(); } catch(e) {}
+      bindFastTap(pill, () => {
+        audio.init();
         thresholdPills.forEach(p => {
           p.className = "threshold-pill w-12 py-1.5 rounded-xl text-xs sm:text-sm font-black bg-slate-800 text-slate-300 border border-slate-700";
         });
@@ -1429,7 +1457,7 @@
       document.getElementById('final-score-val').textContent = `${totalScore} PTS`;
     }
 
-    btnPlayAgain.onclick = () => {
+    bindFastTap(btnPlayAgain, () => {
       audio.init();
       modalGameOver.classList.add('hidden');
       totalScore = 0;
@@ -1438,23 +1466,23 @@
       correctAnswersStreak = 0;
       document.getElementById('hud-combo-badge').classList.add('hidden');
       loadQuestion(0);
-    };
+    });
 
-    btnOpenSettings.onclick = () => {
+    bindFastTap(btnOpenSettings, () => {
       audio.init();
       inputSpellings.value = spellingList.join('\n');
       modalSettings.classList.remove('hidden');
-    };
+    });
 
-    document.getElementById('btn-preset-uk-y34').onclick = () => {
+    bindFastTap(document.getElementById('btn-preset-uk-y34'), () => {
       inputSpellings.value = PRESET_Y34_WORDS.join('\n');
-    };
+    });
 
-    document.getElementById('btn-preset-uk-y56').onclick = () => {
+    bindFastTap(document.getElementById('btn-preset-uk-y56'), () => {
       inputSpellings.value = PRESET_Y56_WORDS.join('\n');
-    };
+    });
 
-    btnSaveSettings.onclick = () => {
+    bindFastTap(btnSaveSettings, () => {
       audio.init();
       if (practiceMode === 'spellings') {
         const raw = inputSpellings.value.split('\n').map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
@@ -1466,7 +1494,7 @@
       comboStreak = 0;
       correctAnswersStreak = 0;
       loadQuestion(0);
-    };
+    });
 
     // SHARE MODAL & 1-CLICK HTML DOWNLOAD
     const btnShareLink = document.getElementById('btn-share-link');
@@ -1476,25 +1504,22 @@
     const btnDownloadHtml = document.getElementById('btn-download-html');
 
     function openShareModal(e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
-      try { audio.init(); } catch (err) {}
+      if (e) { e.stopPropagation(); }
+      audio.init();
       if (modalSettings) modalSettings.classList.add('hidden');
       if (modalShareInstructions) modalShareInstructions.classList.remove('hidden');
     }
 
     function closeShareModal(e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
+      if (e) { e.stopPropagation(); }
       if (modalShareInstructions) modalShareInstructions.classList.add('hidden');
     }
 
-    if (btnShareLink) {
-      btnShareLink.addEventListener('click', openShareModal);
-      btnShareLink.addEventListener('touchend', openShareModal);
-    }
-    if (btnCloseShareInstructions) btnCloseShareInstructions.addEventListener('click', closeShareModal);
-    if (btnDismissShare) btnDismissShare.addEventListener('click', closeShareModal);
+    bindFastTap(btnShareLink, openShareModal);
+    bindFastTap(btnCloseShareInstructions, closeShareModal);
+    bindFastTap(btnDismissShare, closeShareModal);
 
-    btnDownloadHtml.onclick = () => {
+    bindFastTap(btnDownloadHtml, () => {
       audio.init();
       const rawWords = inputSpellings.value.split(/[\n,]+/).map(s => s.trim().toUpperCase()).filter(s => s.length > 0);
       const wordsToEmbed = rawWords.length > 0 ? rawWords : spellingList;
@@ -1510,13 +1535,13 @@
       downloadAnchor.click();
       document.body.removeChild(downloadAnchor);
       URL.revokeObjectURL(blobUrl);
-    };
+    });
 
     const btnAudioToggle = document.getElementById('btn-audio-toggle');
-    btnAudioToggle.onclick = () => {
+    bindFastTap(btnAudioToggle, () => {
       audio.muted = !audio.muted;
       btnAudioToggle.textContent = audio.muted ? '🔇' : '🔊';
-    };
+    });
 
     /* ==========================================
        RENDER & ANIMATION LOOP
