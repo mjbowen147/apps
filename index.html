@@ -172,16 +172,28 @@
         </div>
         <p class="text-xs text-slate-300 font-semibold -mt-2">Answer questions to unlock a 10-second Skateboard Trick Run!</p>
 
-        <!-- Mode Selector Pills -->
+        <!-- Top-Level Subject Toggle: English vs Maths -->
         <div class="space-y-1.5">
-          <div class="text-[11px] font-extrabold text-cyan-400 uppercase tracking-wider">Choose Game Mode</div>
+          <div class="text-[11px] font-extrabold text-cyan-400 uppercase tracking-wider">Choose Subject</div>
+          <div class="grid grid-cols-2 gap-2 bg-slate-900/90 p-1.5 rounded-2xl border-2 border-slate-800 max-w-xs mx-auto">
+            <button id="sub-english" type="button" onpointerdown="setSubject('english')" onmousedown="setSubject('english')" onclick="setSubject('english')" class="py-2 px-4 rounded-xl text-sm font-black font-display tracking-wide transition-colors bg-cyan-400 text-slate-950 shadow-md">
+              &#128214; English
+            </button>
+            <button id="sub-maths" type="button" onpointerdown="setSubject('maths')" onmousedown="setSubject('maths')" onclick="setSubject('maths')" class="py-2 px-4 rounded-xl text-sm font-black font-display tracking-wide transition-colors bg-transparent text-slate-400 hover:text-white">
+              &#128290; Maths
+            </button>
+          </div>
+        </div>
+
+        <!-- Maths Sub-Mode Selector Pills (Shown when Subject = Maths) -->
+        <div id="sec-math-modes" class="hidden space-y-1.5">
+          <div class="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider">Choose Maths Topic</div>
           <div class="flex flex-wrap justify-center gap-1.5" id="modes">
-            <button type="button" onpointerdown="setMode('spellings',this)" onmousedown="setMode('spellings',this)" onclick="setMode('spellings',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 text-slate-950">Spellings</button>
-            <button type="button" onpointerdown="setMode('tables',this)" onmousedown="setMode('tables',this)" onclick="setMode('tables',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Times tables</button>
-            <button type="button" onpointerdown="setMode('division',this)" onmousedown="setMode('division',this)" onclick="setMode('division',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Division</button>
-            <button type="button" onpointerdown="setMode('doubles',this)" onmousedown="setMode('doubles',this)" onclick="setMode('doubles',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Doubles</button>
-            <button type="button" onpointerdown="setMode('halves',this)" onmousedown="setMode('halves',this)" onclick="setMode('halves',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Halves</button>
-            <button type="button" onpointerdown="setMode('bonds',this)" onmousedown="setMode('bonds',this)" onclick="setMode('bonds',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Number bonds</button>
+            <button type="button" data-mode="tables" onpointerdown="setMode('tables',this)" onmousedown="setMode('tables',this)" onclick="setMode('tables',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 text-slate-950">Times tables</button>
+            <button type="button" data-mode="division" onpointerdown="setMode('division',this)" onmousedown="setMode('division',this)" onclick="setMode('division',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Division</button>
+            <button type="button" data-mode="doubles" onpointerdown="setMode('doubles',this)" onmousedown="setMode('doubles',this)" onclick="setMode('doubles',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Doubles</button>
+            <button type="button" data-mode="halves" onpointerdown="setMode('halves',this)" onmousedown="setMode('halves',this)" onclick="setMode('halves',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Halves</button>
+            <button type="button" data-mode="bonds" onpointerdown="setMode('bonds',this)" onmousedown="setMode('bonds',this)" onclick="setMode('bonds',this)" class="m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300">Number bonds</button>
           </div>
         </div>
 
@@ -253,7 +265,7 @@ THOUGHT</textarea>
 
     let words = ["BICYCLE", "CALENDAR", "GRAMMAR", "ISLAND", "PROMISE", "KNOWLEDGE", "STRENGTH", "THOUGHT"];
     let wIdx = 0, target = "", scrambled = [], placed = [];
-    let mode = "spellings", tables = [2, 5, 10], goal = 3, streak = 0, score = 0, bonus = 0;
+    let subject = "english", mode = "spellings", lastMathMode = "tables", tables = [2, 5, 10], goal = 3, streak = 0, score = 0, bonus = 0;
     let inTricks = false, tTimer = null, tLeft = 10;
     let muted = false, actx = null, lastTap = 0;
 
@@ -354,14 +366,42 @@ THOUGHT</textarea>
       document.getElementById('inp-words').value = picked.join('\n');
     }
 
+    function setSubject(sub) {
+      if (!tapOk()) return;
+      playSound('tap');
+      subject = sub;
+      const btnEng = document.getElementById('sub-english');
+      const btnMat = document.getElementById('sub-maths');
+      if (sub === 'english') {
+        btnEng.className = "py-2 px-4 rounded-xl text-sm font-black font-display tracking-wide transition-colors bg-cyan-400 text-slate-950 shadow-md";
+        btnMat.className = "py-2 px-4 rounded-xl text-sm font-black font-display tracking-wide transition-colors bg-transparent text-slate-400 hover:text-white";
+        mode = 'spellings';
+        document.getElementById('sec-words').classList.remove('hidden');
+        document.getElementById('sec-math-modes').classList.add('hidden');
+        document.getElementById('sec-tbl').classList.add('hidden');
+      } else {
+        btnMat.className = "py-2 px-4 rounded-xl text-sm font-black font-display tracking-wide transition-colors bg-amber-400 text-slate-950 shadow-md";
+        btnEng.className = "py-2 px-4 rounded-xl text-sm font-black font-display tracking-wide transition-colors bg-transparent text-slate-400 hover:text-white";
+        mode = lastMathMode || 'tables';
+        document.getElementById('sec-words').classList.add('hidden');
+        document.getElementById('sec-math-modes').classList.remove('hidden');
+        document.querySelectorAll('.m-btn').forEach(b => {
+          const active = b.getAttribute('data-mode') === mode;
+          b.className = `m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold ${active ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'}`;
+        });
+        document.getElementById('sec-tbl').classList.toggle('hidden', mode !== 'tables' && mode !== 'division');
+      }
+    }
+
     function setMode(m, el) {
       if (!tapOk()) return;
       playSound('tap');
       mode = m;
+      if (m !== 'spellings') lastMathMode = m;
       document.querySelectorAll('.m-btn').forEach(b => {
         b.className = "m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300";
       });
-      el.className = "m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 text-slate-950";
+      if (el) el.className = "m-btn px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 text-slate-950";
       document.getElementById('sec-words').classList.toggle('hidden', m !== 'spellings');
       document.getElementById('sec-tbl').classList.toggle('hidden', m !== 'tables' && m !== 'division');
     }
